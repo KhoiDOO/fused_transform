@@ -134,11 +134,26 @@ Step 3: Compute Scaling and Translation ($S \cdot T$)
 
 Next, we group the Scaling and Translation matrices together from the left side of our main equation: $M = (S \cdot T) \cdot R$.
 
-$$S \cdot T = \begin{bmatrix} s_x & 0 & 0 & 0 \\ 0 & s_y & 0 & 0 \\ 0 & 0 & s_z & 0 \\ 0 & 0 & 0 & 1 \end{bmatrix} \begin{bmatrix} 1 & 0 & 0 & t_x \\ 0 & 1 & 0 & t_y \\ 0 & 0 & 1 & t_z \\ 0 & 0 & 0 & 1 \end{bmatrix}$$
+$$S \cdot T = \begin{bmatrix} 
+s_x & 0 & 0 & 0 \\ 
+0 & s_y & 0 & 0 \\ 
+0 & 0 & s_z & 0 \\ 
+0 & 0 & 0 & 1 
+\end{bmatrix} \begin{bmatrix} 
+1 & 0 & 0 & t_x \\ 
+0 & 1 & 0 & t_y \\ 
+0 & 0 & 1 & t_z \\ 
+0 & 0 & 0 & 1 
+\end{bmatrix}$$
 
 Multiplying a scaling matrix by a translation matrix scales the respective axes including the translation components:
 
-$$S \cdot T = \begin{bmatrix} s_x & 0 & 0 & s_x t_x \\ 0 & s_y & 0 & s_y t_y \\ 0 & 0 & s_z & s_z t_z \\ 0 & 0 & 0 & 1 \end{bmatrix}$$
+$$S \cdot T = \begin{bmatrix} 
+s_x & 0 & 0 & s_x t_x \\ 
+0 & s_y & 0 & s_y t_y \\ 
+0 & 0 & s_z & s_z t_z \\ 
+0 & 0 & 0 & 1 
+\end{bmatrix}$$
 
 Step 4: Final Matrix Assembly ($M$)
 
