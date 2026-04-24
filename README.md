@@ -34,23 +34,48 @@ In 3D homogeneous coordinates, transformations are represented by $4 \times 4$ m
 
 1. Scaling Matrix ($S$)
 
-$$S(s_x, s_y, s_z) = \begin{bmatrix} s_x & 0 & 0 & 0 \\ 0 & s_y & 0 & 0 \\ 0 & 0 & s_z & 0 \\ 0 & 0 & 0 & 1 \end{bmatrix}$$
+$$S(s_x, s_y, s_z) = \begin{bmatrix} 
+s_x & 0 & 0 & 0 \\ 
+0 & s_y & 0 & 0 \\ 
+0 & 0 & s_z & 0 \\ 
+0 & 0 & 0 & 1 
+\end{bmatrix}$$
 
 2. Translation Matrix ($T$)
 
-$$T(t_x, t_y, t_z) = \begin{bmatrix} 1 & 0 & 0 & t_x \\ 0 & 1 & 0 & t_y \\ 0 & 0 & 1 & t_z \\ 0 & 0 & 0 & 1 \end{bmatrix}$$
+$$T(t_x, t_y, t_z) = \begin{bmatrix} 
+1 & 0 & 0 & t_x \\ 
+0 & 1 & 0 & t_y \\ 
+0 & 0 & 1 & t_z \\ 
+0 & 0 & 0 & 1 
+\end{bmatrix}$$
 
 3. Rotation around Z-axis ($R_z$)
 
-$$R_z(\alpha) = \begin{bmatrix} \cos\alpha & -\sin\alpha & 0 & 0 \\ \sin\alpha & \cos\alpha & 0 & 0 \\ 0 & 0 & 1 & 0 \\ 0 & 0 & 0 & 1 \end{bmatrix}$$
+$$R_z(\alpha) = \begin{bmatrix} 
+\cos\alpha & -\sin\alpha & 0 & 0 \\ 
+\sin\alpha & \cos\alpha & 0 & 0 \\ 
+0 & 0 & 1 & 0 \\ 
+0 & 0 & 0 & 1 
+\end{bmatrix}$$
 
 4. Rotation around Y-axis ($R_y$)
 
-$$R_y(\beta) = \begin{bmatrix} \cos\beta & 0 & \sin\beta & 0 \\ 0 & 1 & 0 & 0 \\ -\sin\beta & 0 & \cos\beta & 0 \\ 0 & 0 & 0 & 1 \end{bmatrix}$$
+$$R_y(\beta) = \begin{bmatrix} 
+\cos\beta & 0 & \sin\beta & 0 \\ 
+0 & 1 & 0 & 0 \\ 
+-\sin\beta & 0 & \cos\beta & 0 \\ 
+0 & 0 & 0 & 1 
+\end{bmatrix}$$
 
 5. Rotation around X-axis ($R_x$)
 
-$$R_x(\gamma) = \begin{bmatrix} 1 & 0 & 0 & 0 \\ 0 & \cos\gamma & -\sin\gamma & 0 \\ 0 & \sin\gamma & \cos\gamma & 0 \\ 0 & 0 & 0 & 1 \end{bmatrix}$$
+$$R_x(\gamma) = \begin{bmatrix} 
+1 & 0 & 0 & 0 \\ 
+0 & \cos\gamma & -\sin\gamma & 0 \\ 
+0 & \sin\gamma & \cos\gamma & 0 \\ 
+0 & 0 & 0 & 1 
+\end{bmatrix}$$
 
 Step 2: Compute the Composite Rotation Matrix ($R$)
 
@@ -60,41 +85,41 @@ Because matrix multiplication is associative, we can group the operations. We wi
 
 Let $R_{yx} = R_y \cdot R_x$.
 
-$$R_{yx} = \begin{bmatrix} \cos\beta & 0 & \sin\beta & 0 \\ 0 & 1 & 0 & 0 \\ -\sin\beta & 0 & \cos\beta & 0 \\ 0 & 0 & 0 & 1 \end{bmatrix} \begin{bmatrix} 1 & 0 & 0 & 0 \\ 0 & \cos\gamma & -\sin\gamma & 0 \\ 0 & \sin\gamma & \cos\gamma & 0 \\ 0 & 0 & 0 & 1 \end{bmatrix}$$
+$$R_{yx} = \begin{bmatrix} 
+\cos\beta & 0 & \sin\beta & 0 \\ 
+0 & 1 & 0 & 0 \\ 
+-\sin\beta & 0 & \cos\beta & 0 \\ 
+0 & 0 & 0 & 1 
+\end{bmatrix} \begin{bmatrix} 
+1 & 0 & 0 & 0 \\ 
+0 & \cos\gamma & -\sin\gamma & 0 \\ 
+0 & \sin\gamma & \cos\gamma & 0 \\ 
+0 & 0 & 0 & 1 \end{bmatrix}$$
 
 Performing the dot product for rows and columns:
 
-Row 1: $[\cos\beta \cdot 1, \quad \sin\beta \cdot \sin\gamma, \quad \sin\beta \cdot \cos\gamma, \quad 0]$
-
-Row 2: $[0, \quad 1 \cdot \cos\gamma, \quad 1 \cdot (-\sin\gamma), \quad 0]$
-
-Row 3: $[-\sin\beta \cdot 1, \quad \cos\beta \cdot \sin\gamma, \quad \cos\beta \cdot \cos\gamma, \quad 0]$
-
-Row 4: $[0, \quad 0, \quad 0, \quad 1]$
-
-$$R_{yx} = \begin{bmatrix} \cos\beta & \sin\beta \sin\gamma & \sin\beta \cos\gamma & 0 \\ 0 & \cos\gamma & -\sin\gamma & 0 \\ -\sin\beta & \cos\beta \sin\gamma & \cos\beta \cos\gamma & 0 \\ 0 & 0 & 0 & 1 \end{bmatrix}$$
+$$R_{yx} = \begin{bmatrix} 
+\cos\beta & \sin\beta \sin\gamma & \sin\beta \cos\gamma & 0 \\ 
+0 & \cos\gamma & -\sin\gamma & 0 \\ 
+-\sin\beta & \cos\beta \sin\gamma & \cos\beta \cos\gamma & 0 \\ 
+0 & 0 & 0 & 1 
+\end{bmatrix}$$
 
 2b. Multiply $R_z(\alpha)$ and $R_{yx}$
 
 Now, multiply the Z-rotation matrix by the result of the previous step: $R = R_z \cdot R_{yx}$.
 
-$$R = \begin{bmatrix} \cos\alpha & -\sin\alpha & 0 & 0 \\ \sin\alpha & \cos\alpha & 0 & 0 \\ 0 & 0 & 1 & 0 \\ 0 & 0 & 0 & 1 \end{bmatrix} \begin{bmatrix} \cos\beta & \sin\beta \sin\gamma & \sin\beta \cos\gamma & 0 \\ 0 & \cos\gamma & -\sin\gamma & 0 \\ -\sin\beta & \cos\beta \sin\gamma & \cos\beta \cos\gamma & 0 \\ 0 & 0 & 0 & 1 \end{bmatrix}$$
-
-Evaluating this row by row:
-
-Row 1, Col 1: $\cos\alpha \cos\beta - \sin\alpha(0) + 0 + 0 = \cos\alpha \cos\beta$
-
-Row 1, Col 2: $\cos\alpha(\sin\beta \sin\gamma) - \sin\alpha(\cos\gamma) + 0 + 0 = \cos\alpha \sin\beta \sin\gamma - \sin\alpha \cos\gamma$
-
-Row 1, Col 3: $\cos\alpha(\sin\beta \cos\gamma) - \sin\alpha(-\sin\gamma) + 0 + 0 = \cos\alpha \sin\beta \cos\gamma + \sin\alpha \sin\gamma$
-
-Row 2, Col 1: $\sin\alpha \cos\beta + \cos\alpha(0) + 0 + 0 = \sin\alpha \cos\beta$
-
-Row 2, Col 2: $\sin\alpha(\sin\beta \sin\gamma) + \cos\alpha(\cos\gamma) + 0 + 0 = \sin\alpha \sin\beta \sin\gamma + \cos\alpha \cos\gamma$
-
-Row 2, Col 3: $\sin\alpha(\sin\beta \cos\gamma) + \cos\alpha(-\sin\gamma) + 0 + 0 = \sin\alpha \sin\beta \cos\gamma - \cos\alpha \sin\gamma$
-
-Row 3: The third row of $R_z$ is $[0, 0, 1, 0]$, so it simply copies the third row of $R_{yx}$.
+$$R = \begin{bmatrix} 
+\cos\alpha & -\sin\alpha & 0 & 0 \\ 
+\sin\alpha & \cos\alpha & 0 & 0 \\ 
+0 & 0 & 1 & 0 \\ 
+0 & 0 & 0 & 1 
+\end{bmatrix} \begin{bmatrix} 
+\cos\beta & \sin\beta \sin\gamma & \sin\beta \cos\gamma & 0 \\ 
+0 & \cos\gamma & -\sin\gamma & 0 \\ 
+-\sin\beta & \cos\beta \sin\gamma & \cos\beta \cos\gamma & 0 \\ 
+0 & 0 & 0 & 1 
+\end{bmatrix}$$
 
 Resulting in the composite rotation matrix $R$:
 
@@ -119,7 +144,17 @@ Step 4: Final Matrix Assembly ($M$)
 
 Finally, we multiply the combined Scale/Translate matrix by our combined Rotation matrix: $M = (S \cdot T) \cdot R$.
 
-$$M = \begin{bmatrix} s_x & 0 & 0 & s_x t_x \\ 0 & s_y & 0 & s_y t_y \\ 0 & 0 & s_z & s_z t_z \\ 0 & 0 & 0 & 1 \end{bmatrix} \begin{bmatrix} R_{11} & R_{12} & R_{13} & 0 \\ R_{21} & R_{22} & R_{23} & 0 \\ R_{31} & R_{32} & R_{33} & 0 \\ 0 & 0 & 0 & 1 \end{bmatrix}$$
+$$M = \begin{bmatrix} 
+s_x & 0 & 0 & s_x t_x \\ 
+0 & s_y & 0 & s_y t_y \\ 
+0 & 0 & s_z & s_z t_z \\ 
+0 & 0 & 0 & 1 
+\end{bmatrix} \begin{bmatrix} 
+R_{11} & R_{12} & R_{13} & 0 \\ 
+R_{21} & R_{22} & R_{23} & 0 \\ 
+R_{31} & R_{32} & R_{33} & 0 \\ 
+0 & 0 & 0 & 1 
+\end{bmatrix}$$
 
 Due to the structure of the left matrix (a diagonal matrix plus a translation vector in the 4th column), multiplying it by $R$ (which has $[0, 0, 0, 1]^T$ in its 4th column) results in:
 
