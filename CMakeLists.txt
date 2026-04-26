@@ -9,7 +9,11 @@ find_package(CUDAToolkit REQUIRED)
 add_subdirectory(csrc)
 
 add_executable(main main.cpp)
-target_link_libraries(main PRIVATE sample_p_cube os transform simple_matmul CUDA::cudart)
+target_link_libraries(
+    main PRIVATE sample_p_cube os transform simple_matmul utils CUDA::cudart
+)
 
 add_executable(bench bench.cpp)
-target_link_libraries(bench PRIVATE sample_p_cube os transform simple_matmul CUDA::cudart)
+target_link_libraries(
+    bench PRIVATE sample_p_cube os transform simple_matmul utils CUDA::cudart
+)

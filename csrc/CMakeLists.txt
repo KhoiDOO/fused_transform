@@ -1,5 +1,8 @@
 cmake_minimum_required(VERSION 3.10)
 
+add_library(utils SHARED utils.c)
+target_include_directories(utils PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+
 add_library(sample_p_cube SHARED sample_p_cube.c)
 target_include_directories(sample_p_cube PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 
