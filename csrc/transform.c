@@ -106,9 +106,10 @@ void undo_homogeneous_points(float* points, float* homogeneous_points, size_t nu
     }
 }
 
-void transpose_matrix(const float* matrix, float* transposed_matrix, int rows, int cols) {
-    for (int i = 0; i < rows; ++i) {
-        for (int j = 0; j < cols; ++j) {
+void transpose_matrix(const float* matrix, float* transposed_matrix, size_t rows, size_t cols) {
+    for (size_t i =
+         0; i < rows; ++i) {
+        for (size_t j = 0; j < cols; ++j) {
             transposed_matrix[j * rows + i] = matrix[i * cols + j];
         }
     }

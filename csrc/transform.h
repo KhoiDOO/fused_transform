@@ -24,7 +24,7 @@ void do_homogeneous_points(float* points, float* homogeneous_points, size_t num_
 
 void undo_homogeneous_points(float* points, float* homogeneous_points, size_t num_points);
 
-void transpose_matrix(const float* matrix, float* transposed_matrix, int rows, int cols);
+void transpose_matrix(const float* matrix, float* transposed_matrix, size_t rows, size_t cols);
 
 #ifdef __cplusplus
 }
