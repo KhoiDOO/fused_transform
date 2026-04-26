@@ -1,10 +1,12 @@
 #include <iostream>
 #include <cuda_runtime.h>
 
-#include "simple_matmul.h"
-#include "sample_p_cube.h"
-#include "transform.h"
-#include "os.h"
+#include "csrc/simple_matmul.h"
+#include "csrc/sample_p_cube.h"
+#include "csrc/transform.h"
+
+#include "csrc/utils.h"
+#include "csrc/os.h"
 
 #define BLOCK_SIZE 256
 #define M 4
@@ -14,9 +16,22 @@ int main() {
     // Points sampled on the surface of a cube
 
     const size_t num_points = 1024; // Number of points to sample on the cube surface
-    float points[num_points * 3]; // Each point has 3 coordinates (x, y, z)
-    float homo_points[num_points * 4]; // Each homogeneous point has 4 coordinates (x, y, z, w)
-    float homo_points_t[4 * num_points]; // Transposed homogeneous points
+    float *points = (float*)malloc(num_points * 3 * sizeof(float)); // Each point has 3 coordinates (x, y, z)
+    float *homo_points = (float*)malloc(num_points * 4 * sizeof(float)); // Each homogeneous point has 4 coordinates (x, y, z, w)
+    float *homo_points_t = (float*)malloc(4 * num_points * sizeof(float)); // Transposed homogeneous points
+    cudaStream_t compute_stream, data_stream_1, data_stream_2, data_stream_3, data_stream_4, data_stream_5;
+
+    if (points == NULL || homo_points == NULL || homo_points_t == NULL) {
+        fprintf(stderr, "Memory allocation failed\n");
+        return 1;
+    }
+
+    CHECK_CUDA_ERROR(cudaStreamCreate(&compute_stream));
+    CHECK_CUDA_ERROR(cudaStreamCreate(&data_stream_1));
+    CHECK_CUDA_ERROR(cudaStreamCreate(&data_stream_2));
+    CHECK_CUDA_ERROR(cudaStreamCreate(&data_stream_3));
+    CHECK_CUDA_ERROR(cudaStreamCreate(&data_stream_4));
+    CHECK_CUDA_ERROR(cudaStreamCreate(&data_stream_5));
 
     sample_cube_surface(points, num_points);
     do_homogeneous_points(points, homo_points, num_points);
@@ -28,11 +43,11 @@ int main() {
     float *d_homo_points;
 
     // Allocate memory for points on the device
-    int size_points = num_points * 4 * sizeof(float);
-    cudaMalloc(&d_homo_points, size_points);
+    size_t size_points = num_points * 4 * sizeof(float);
+    CHECK_CUDA_ERROR(cudaMalloc(&d_homo_points, size_points));
 
     // Copy points from host to device
-    cudaMemcpy(d_homo_points, homo_points_t, size_points, cudaMemcpyHostToDevice);
+    CHECK_CUDA_ERROR(cudaMemcpyAsync(d_homo_points, homo_points_t, size_points, cudaMemcpyHostToDevice, data_stream_1));
 
     // Generate transformation matrices
     const float angle_x = 30.0f; // Rotation angle around the X-axis in degrees
@@ -48,7 +63,7 @@ int main() {
     float *h_mat_rot_x, *h_mat_rot_y, *h_mat_rot_z, *h_mat_trans, *h_mat_scale; // Host matrices
     float *d_mat_rot_x, *d_mat_rot_y, *d_mat_rot_z, *d_mat_trans, *d_mat_scale; // Device matrices
 
-    int size = 16 * sizeof(float);
+    size_t size = 16 * sizeof(float);
 
     // Allocate memory for the transformation matrices on the host
     h_mat_rot_x = (float*)malloc(size);
@@ -65,24 +80,27 @@ int main() {
     generate_scaling_matrix(sx, sy, sz, h_mat_scale);
 
     // Allocate memory for the transformation matrices on the device
-    cudaMalloc(&d_mat_rot_x, size);
-    cudaMalloc(&d_mat_rot_y, size);
-    cudaMalloc(&d_mat_rot_z, size);
-    cudaMalloc(&d_mat_trans, size);
-    cudaMalloc(&d_mat_scale, size);
+    CHECK_CUDA_ERROR(cudaMalloc(&d_mat_rot_x, size));
+    CHECK_CUDA_ERROR(cudaMalloc(&d_mat_rot_y, size));
+    CHECK_CUDA_ERROR(cudaMalloc(&d_mat_rot_z, size));
+    CHECK_CUDA_ERROR(cudaMalloc(&d_mat_trans, size));
+    CHECK_CUDA_ERROR(cudaMalloc(&d_mat_scale, size));
 
-    // Copy the transformation matrices from the host to the device
-    cudaMemcpy(d_mat_rot_x, h_mat_rot_x, size, cudaMemcpyHostToDevice);
-    cudaMemcpy(d_mat_rot_y, h_mat_rot_y, size, cudaMemcpyHostToDevice);
-    cudaMemcpy(d_mat_rot_z, h_mat_rot_z, size, cudaMemcpyHostToDevice);
-    cudaMemcpy(d_mat_trans, h_mat_trans, size, cudaMemcpyHostToDevice);
-    cudaMemcpy(d_mat_scale, h_mat_scale, size, cudaMemcpyHostToDevice);
+    // Copy the transformation matrices from the host to the device asynchronously
+    CHECK_CUDA_ERROR(cudaMemcpyAsync(d_mat_rot_x, h_mat_rot_x, size, cudaMemcpyHostToDevice, data_stream_1));
+    CHECK_CUDA_ERROR(cudaMemcpyAsync(d_mat_rot_y, h_mat_rot_y, size, cudaMemcpyHostToDevice, data_stream_2));
+    CHECK_CUDA_ERROR(cudaMemcpyAsync(d_mat_rot_z, h_mat_rot_z, size, cudaMemcpyHostToDevice, data_stream_3));
+    CHECK_CUDA_ERROR(cudaMemcpyAsync(d_mat_trans, h_mat_trans, size, cudaMemcpyHostToDevice, data_stream_4));
+    CHECK_CUDA_ERROR(cudaMemcpyAsync(d_mat_scale, h_mat_scale, size, cudaMemcpyHostToDevice, data_stream_5));
+
+    // Make sure all data transfers are complete before starting computations
+    CHECK_CUDA_ERROR(cudaStreamSynchronize(data_stream_5));
 
     // Memory allocation for results of transformations on the host and device
     float *h_res_rot_x, *h_res_rot_y, *h_res_rot_z, *h_res_trans, *h_res_scale; // Host results
     float *d_res_rot_x, *d_res_rot_y, *d_res_rot_z, *d_res_trans, *d_res_scale; // Device results
 
-    int size_res = num_points * 4 * sizeof(float);
+    size_t size_res = num_points * 4 * sizeof(float);
     
     h_res_rot_x = (float*)malloc(size_res);
     h_res_rot_y = (float*)malloc(size_res);
@@ -90,19 +108,19 @@ int main() {
     h_res_trans = (float*)malloc(size_res);
     h_res_scale = (float*)malloc(size_res);
 
-    cudaMalloc(&d_res_rot_x, size_res);
-    cudaMalloc(&d_res_rot_y, size_res);
-    cudaMalloc(&d_res_rot_z, size_res);
-    cudaMalloc(&d_res_trans, size_res);
-    cudaMalloc(&d_res_scale, size_res);
+    CHECK_CUDA_ERROR(cudaMalloc(&d_res_rot_x, size_res));
+    CHECK_CUDA_ERROR(cudaMalloc(&d_res_rot_y, size_res));
+    CHECK_CUDA_ERROR(cudaMalloc(&d_res_rot_z, size_res));
+    CHECK_CUDA_ERROR(cudaMalloc(&d_res_trans, size_res));
+    CHECK_CUDA_ERROR(cudaMalloc(&d_res_scale, size_res));
 
     // Rotation around X-axis
-    simple_matmul(d_mat_rot_x, d_homo_points, d_res_rot_x, 4, num_points, 4);
-    cudaDeviceSynchronize();
+    simple_matmul(d_mat_rot_x, d_homo_points, d_res_rot_x, 4, num_points, 4, compute_stream);
+    CHECK_CUDA_ERROR(cudaStreamSynchronize(compute_stream));
 
     // Copy results from device to host
-    cudaMemcpy(h_res_rot_x, d_res_rot_x, size_res, cudaMemcpyDeviceToHost);
-    
+    CHECK_CUDA_ERROR(cudaMemcpy(h_res_rot_x, d_res_rot_x, size_res, cudaMemcpyDeviceToHost));
+
     // Transpose result
     float* h_res_rot_x_t = (float*)malloc(size_res);
     transpose_matrix(h_res_rot_x, h_res_rot_x_t, 4, num_points);
@@ -114,11 +132,11 @@ int main() {
     to_ply(h_res_rot_x, num_points, "debug/rot_x.ply");
 
     // Rotation around Y-axis
-    simple_matmul(d_mat_rot_y, d_res_rot_x, d_res_rot_y, 4, num_points, 4);
-    cudaDeviceSynchronize();
+    simple_matmul(d_mat_rot_y, d_res_rot_x, d_res_rot_y, 4, num_points, 4, compute_stream);
+    CHECK_CUDA_ERROR(cudaStreamSynchronize(compute_stream));
 
     // Copy results from device to host
-    cudaMemcpy(h_res_rot_y, d_res_rot_y, size_res, cudaMemcpyDeviceToHost);
+    CHECK_CUDA_ERROR(cudaMemcpy(h_res_rot_y, d_res_rot_y, size_res, cudaMemcpyDeviceToHost));
 
     // Transpose result
     float* h_res_rot_y_t = (float*)malloc(size_res);
@@ -131,11 +149,11 @@ int main() {
     to_ply(h_res_rot_y, num_points, "debug/rot_x_y.ply");
 
     // Rotation around Z-axis
-    simple_matmul(d_mat_rot_z, d_res_rot_y, d_res_rot_z, 4, num_points, 4);
-    cudaDeviceSynchronize();
+    simple_matmul(d_mat_rot_z, d_res_rot_y, d_res_rot_z, 4, num_points, 4, compute_stream);
+    CHECK_CUDA_ERROR(cudaStreamSynchronize(compute_stream));
 
     // Copy results from device to host
-    cudaMemcpy(h_res_rot_z, d_res_rot_z, size_res, cudaMemcpyDeviceToHost);
+    CHECK_CUDA_ERROR(cudaMemcpy(h_res_rot_z, d_res_rot_z, size_res, cudaMemcpyDeviceToHost));
 
     // Transpose result
     float* h_res_rot_z_t = (float*)malloc(size_res);
@@ -148,11 +166,11 @@ int main() {
     to_ply(h_res_rot_z, num_points, "debug/rot_x_y_z.ply");
 
     // Translation
-    simple_matmul(d_mat_trans, d_res_rot_z, d_res_trans, 4, num_points, 4);
-    cudaDeviceSynchronize();
+    simple_matmul(d_mat_trans, d_res_rot_z, d_res_trans, 4, num_points, 4, compute_stream);
+    CHECK_CUDA_ERROR(cudaStreamSynchronize(compute_stream));
 
     // Copy results from device to host
-    cudaMemcpy(h_res_trans, d_res_trans, size_res, cudaMemcpyDeviceToHost);
+    CHECK_CUDA_ERROR(cudaMemcpy(h_res_trans, d_res_trans, size_res, cudaMemcpyDeviceToHost));
 
     // Transpose result
     float* h_res_trans_t = (float*)malloc(size_res);
@@ -165,11 +183,11 @@ int main() {
     to_ply(h_res_trans, num_points, "debug/trans.ply");
 
     // Scaling
-    simple_matmul(d_mat_scale, d_res_trans, d_res_scale, 4, num_points, 4);
-    cudaDeviceSynchronize();
+    simple_matmul(d_mat_scale, d_res_trans, d_res_scale, 4, num_points, 4, compute_stream);
+    CHECK_CUDA_ERROR(cudaStreamSynchronize(compute_stream));
 
     // Copy results from device to host
-    cudaMemcpy(h_res_scale, d_res_scale, size_res, cudaMemcpyDeviceToHost);
+    CHECK_CUDA_ERROR(cudaMemcpy(h_res_scale, d_res_scale, size_res, cudaMemcpyDeviceToHost));
 
     // Transpose result
     float* h_res_scale_t = (float*)malloc(size_res);
@@ -192,14 +210,14 @@ int main() {
 
     generate_fused_transform_matrix(tx, ty, tz, angle_x, angle_y, angle_z, sx, sy, sz, h_mat_fused);
     
-    cudaMalloc(&d_mat_fused, size);
-    cudaMemcpy(d_mat_fused, h_mat_fused, size, cudaMemcpyHostToDevice);
+    CHECK_CUDA_ERROR(cudaMalloc(&d_mat_fused, size));
+    CHECK_CUDA_ERROR(cudaMemcpy(d_mat_fused, h_mat_fused, size, cudaMemcpyHostToDevice));
 
-    cudaMalloc(&d_res_fused, size_res);
-    simple_matmul(d_mat_fused, d_homo_points, d_res_fused, 4, num_points, 4);
-    cudaDeviceSynchronize();
+    CHECK_CUDA_ERROR(cudaMalloc(&d_res_fused, size_res));
+    simple_matmul(d_mat_fused, d_homo_points, d_res_fused, 4, num_points, 4, compute_stream);
+    CHECK_CUDA_ERROR(cudaStreamSynchronize(compute_stream));
 
-    cudaMemcpy(h_res_fused, d_res_fused, size_res, cudaMemcpyDeviceToHost);
+    CHECK_CUDA_ERROR(cudaMemcpy(h_res_fused, d_res_fused, size_res, cudaMemcpyDeviceToHost));
 
     float* h_res_fused_t = (float*)malloc(size_res);
     transpose_matrix(h_res_fused, h_res_fused_t, 4, num_points);
@@ -237,16 +255,22 @@ int main() {
     free(h_res_fused);
     free(h_res_fused_t);
 
-    cudaFree(d_res_rot_x);
-    cudaFree(d_res_rot_y);
-    cudaFree(d_res_rot_z);
-    cudaFree(d_res_trans);
-    cudaFree(d_res_scale);
-    cudaFree(d_mat_rot_x);
-    cudaFree(d_mat_rot_y);
-    cudaFree(d_mat_rot_z);
-    cudaFree(d_mat_trans);
-    cudaFree(d_mat_scale);
-    cudaFree(d_mat_fused);
-    cudaFree(d_res_fused);
+    CHECK_CUDA_ERROR(cudaFree(d_res_rot_x));
+    CHECK_CUDA_ERROR(cudaFree(d_res_rot_y));
+    CHECK_CUDA_ERROR(cudaFree(d_res_rot_z));
+    CHECK_CUDA_ERROR(cudaFree(d_res_trans));
+    CHECK_CUDA_ERROR(cudaFree(d_res_scale));
+    CHECK_CUDA_ERROR(cudaFree(d_mat_rot_x));
+    CHECK_CUDA_ERROR(cudaFree(d_mat_rot_y));
+    CHECK_CUDA_ERROR(cudaFree(d_mat_rot_z));
+    CHECK_CUDA_ERROR(cudaFree(d_mat_trans));
+    CHECK_CUDA_ERROR(cudaFree(d_mat_scale));
+    CHECK_CUDA_ERROR(cudaFree(d_mat_fused));
+    CHECK_CUDA_ERROR(cudaFree(d_res_fused));
+    CHECK_CUDA_ERROR(cudaStreamDestroy(compute_stream));
+    CHECK_CUDA_ERROR(cudaStreamDestroy(data_stream_1));
+    CHECK_CUDA_ERROR(cudaStreamDestroy(data_stream_2));
+    CHECK_CUDA_ERROR(cudaStreamDestroy(data_stream_3));
+    CHECK_CUDA_ERROR(cudaStreamDestroy(data_stream_4));
+    CHECK_CUDA_ERROR(cudaStreamDestroy(data_stream_5));
 }
