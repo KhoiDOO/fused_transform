@@ -22,6 +22,34 @@ make
 ./bench # simple benchmarking
 ```
 
+# Result
+```
+// 1024 points
+Non-fused total time: 0.000905555 ms
+Fused total time: 4.77e-06 ms
+Speedup: 189.844x
+
+// 2048 points
+Non-fused total time: 0.000906288 ms
+Fused total time: 4.74206e-06 ms
+Speedup: 191.117x
+
+// 4096 points
+Non-fused total time: 0.00105129 ms
+Fused total time: 4.71598e-06 ms
+Speedup: 222.92x
+
+// 1M points
+Non-fused total time: 0.00110753 ms
+Fused total time: 4.5391e-05 ms
+Speedup: 24.3998x
+
+// 100M points
+Non-fused total time: 0.020947 ms
+Fused total time: 0.00398435 ms
+Speedup: 5.25731x
+```
+
 # 3D Homogeneous Transformation Matrix Calculation
 
 This document outlines the detailed step-by-step derivation of the composite transformation matrix $M$ in 3D homogeneous coordinates, defined as:
