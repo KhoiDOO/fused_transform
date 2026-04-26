@@ -23,13 +23,13 @@ __global__ void simple_matmul_kernel(const float *A, const float *B, float *C, i
     }
 }
 
-void simple_matmul(const float *A, const float *B, float *C, size_t m, size_t n, size_t k) {
+void simple_matmul(const float *A, const float *B, float *C, size_t m, size_t n, size_t k, cudaStream_t stream) {
     const dim3 block_dim(16, 16);
     const dim3 grid_dim(
         static_cast<unsigned int>((n + block_dim.x - 1) / block_dim.x),
         static_cast<unsigned int>((m + block_dim.y - 1) / block_dim.y));
 
-    simple_matmul_kernel<<<grid_dim, block_dim>>>(
+    simple_matmul_kernel<<<grid_dim, block_dim, 0, stream>>>(
         A,
         B,
         C,
